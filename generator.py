@@ -8,7 +8,9 @@ from vgg import VGG19Features
 class GeneratorBlock(torch.nn.Module):
 
     def __init__(self, prev_channels: int, vgg_channels: int, out_channels: int, block_size: int, initial: bool = False) -> None:
-        """ Constructor method.
+        """ GeneratorBlock: Single block of cascaded generator. Each of these blocks receives three inputs (previous block output, vgg feature tensor, and downsampled copy of main input)
+            and concatenates all of them before two convolutional layers are applied. Therefore the previous block activations are bilinearly resized to the block_size of the current GeneratorBlock.
+            The initial GeneratorBlock in the cascade does not receive a previous activation tensor.
 
         Parameters
         ----------
@@ -91,7 +93,10 @@ class Generator(torch.nn.Module):
                        block_out_channels: Tuple[int, ...] = (16, 32, 64, 128, 256),
                        vgg_layer_idxs: Tuple[int, ...] = (3, 8, 17, 26, 35),
                        vgg_layer_channels: Tuple[int, ...] = (64, 128, 256, 512, 512)) -> None:
-        """ Constructor method.
+        """ Generator: Cascaded generator consisting of a cascade of GeneratorBlocks followed by a final block that reduces the last GeneratorBlock's output to two channels.
+            This type of generator has been designed to map a single lightness (grayscale) L input channel onto its two AB color channels in the LAB color space. The
+            architecture can be understood as a modified cascaded refinement network that additionally utilizes the intermediate feature layer activations of a pre-pretrained
+            VGG19 model and incorporates them during the recursive computation through the cascaded generator.
 
         Parameters
         ----------
@@ -119,12 +124,14 @@ class Generator(torch.nn.Module):
         # build cascade of generator blocks
         self.blocks = torch.nn.ModuleList()
         for b in range(B):
+            # derive block hyperparameters
             prev_channels = 0 if b == 0 else block_out_channels[-b]
             vgg_channels = vgg_layer_channels[-(b+1)]
             out_channels = block_out_channels[-(b+1)]
             block_size = block_sizes[-(b+1)]
             initial = b == 0
 
+            # append block to cascade
             self.blocks.append(
                 GeneratorBlock(prev_channels=prev_channels, vgg_channels=vgg_channels, out_channels=out_channels, block_size=block_size, initial=initial)
             )

@@ -1,4 +1,3 @@
-
 import argparse
 
 parser = argparse.ArgumentParser(description='Train deep image colorization network')
