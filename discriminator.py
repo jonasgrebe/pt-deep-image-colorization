@@ -38,14 +38,15 @@ class DiscriminatorBlock(torch.nn.Module):
 
 class Discriminator(torch.nn.Module):
 
-    def __init__(self, block_channels: Tuple[Tuple[int, int]] = ((3, 32), (32, 64), (64, 128), (128, 256), (256, 512))) -> None:
+    def __init__(self, input_shape: Tuple[int, int, int] = (3, 256, 256), block_channels: Tuple[Tuple[int, int]] = ((3, 32), (32, 64), (64, 128), (128, 256), (256, 512))) -> None:
         super(Discriminator, self).__init__()
 
         self.blocks = torch.nn.ModuleList()
         for in_channels, out_channels in block_channels:
             self.blocks.append(DiscriminatorBlock(in_channels=in_channels, out_channels=out_channels))
 
-        self.final_linear = torch.nn.Linear(in_features=8*8*block_channels[-1][-1], out_features=1)
+        last_block_size = input_shape[-1] // 2 ** len(block_channels)
+        self.final_linear = torch.nn.Linear(in_features=last_block_size*last_block_size*block_channels[-1][-1], out_features=1)
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         x = input
@@ -59,7 +60,7 @@ class Discriminator(torch.nn.Module):
 if __name__ == '__main__':
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    d = Discriminator()
+    d = Discriminator(input_shape=(3, 256, 256))
     d.to(DEVICE)
     print(d)
     summary(d, (3, 256, 256))
