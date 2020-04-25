@@ -9,17 +9,20 @@ class Trainer():
 
     def fit(dataloader):
         # fit generator and discriminator to training data
-        pass
+        self.generator.train()
+        self.discriminator.train()
 
 
     def validate():
         # validate the hyperparameters
-        pass
+        self.generator.eval()
+        self.discriminator.eval()
 
 
     def test():
         # test the trained generator
-        pass
+        self.generator.eval()
+        self.discriminator.eval()
 
 
     def inference():
