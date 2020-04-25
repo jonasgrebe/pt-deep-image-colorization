@@ -15,9 +15,9 @@ class GeneratorBlock(torch.nn.Module):
         Parameters
         ----------
         prev_channels : int
-            Number of incoming channels from the previous GeneratorBlock. This is irrelevant if initial is True
+            Number of incoming channels from the previous GeneratorBlock. This is irrelevant if initial is True.
         vgg_channels : int
-            Number of incoming channels from the vgg feature tensor of this GeneratorBlock
+            Number of incoming channels from the vgg feature tensor of this GeneratorBlock.
         out_channels : int
             Number of outgoing channels of this GeneratorBlock.
         block_size : int
@@ -64,8 +64,8 @@ class GeneratorBlock(torch.nn.Module):
         Returns
         -------
         torch.Tensor
-            Output tensor of this GeneratorBlock. This tensor is either used as the input to the next GeneratorBlock in the cascade or to The
-            final block.
+            Output tensor of this GeneratorBlock. This tensor is either used as the input to the next GeneratorBlock in the cascade or to the
+            final block that reduces it to two channels.
 
         """
 
@@ -106,7 +106,7 @@ class Generator(torch.nn.Module):
             Tuple of number of outgoing channels for each of the GeneratorBlocks. The first block in this Tuple refers to the last block in the cascade.
         vgg_layer_idxs : Tuple[int, ...]
             Tuple of VGG feature layer indices. The first block in this Tuple refers to the last block in the cascade. The block sizes given in the block_sizes Tuple
-            must match the spatial sizes of vgg layer since they are not bilinearly resized.
+            must match the spatial sizes of the vgg layers since they are not bilinearly resized.
         vgg_layer_channels : Tuple[int, ...]
             Tuple of number of channels of each VGG feature layer. The first block in this Tuple refers to the last block in the cascade. The layer channels in this Tuple
             must match the number of channels in the hidden VGG layers referred to the vgg_layer_idxs Tuple.

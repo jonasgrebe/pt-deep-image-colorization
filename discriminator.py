@@ -6,9 +6,22 @@ from torchsummary import summary
 
 class DiscriminatorBlock(torch.nn.Module):
 
-    def __init__(self, in_channels: int, out_channels: int, dropout_rate: float=0.2) -> None:
+    def __init__(self, in_channels: int, out_channels: int, dropout_rate: float=0.1) -> None:
+        """Short summary.
+
+        Parameters
+        ----------
+        in_channels : int
+            Number of incoming channels.
+        out_channels : int
+            Number of outgoing channels.
+        dropout_rate : float
+            Probability for each of the outgoing channels to get dropped during training.
+
+        """
         super(DiscriminatorBlock, self).__init__()
 
+        # define layers of this block
         self.layers = torch.nn.Sequential(
             torch.nn.utils.spectral_norm(torch.nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1, bias=True)),
             torch.nn.BatchNorm2d(num_features=out_channels),
@@ -18,15 +31,30 @@ class DiscriminatorBlock(torch.nn.Module):
             torch.nn.LeakyReLU()
         )
 
+        # define residual mapping
         self.residual_mapping = torch.nn.Sequential(
             torch.nn.utils.spectral_norm(torch.nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=1, padding=0, bias=True)),
         )
 
+        # define pooling and dropout
         self.pooling = torch.nn.AvgPool2d(kernel_size=2)
         self.dropout = torch.nn.Dropout2d(p=dropout_rate)
 
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
+        """Short summary.
+
+        Parameters
+        ----------
+        input : torch.Tensor
+            Description of parameter `input`.
+
+        Returns
+        -------
+        torch.Tensor
+            Description of returned object.
+
+        """
 
         x = self.layers(input)
         x = x + self.residual_mapping(input)
