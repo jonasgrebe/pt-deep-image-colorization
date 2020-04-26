@@ -7,7 +7,7 @@ from torchsummary import summary
 class DiscriminatorBlock(torch.nn.Module):
 
     def __init__(self, in_channels: int, out_channels: int, dropout_rate: float=0.1) -> None:
-        """Short summary.
+        """ DiscriminatorBlock: Single convolutional block of discriminator.
 
         Parameters
         ----------
@@ -42,17 +42,18 @@ class DiscriminatorBlock(torch.nn.Module):
 
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        """Short summary.
+        """ Forwards a given input tensor through this block by feeding it through the convolutional layers including batch normalization, spectral norm,
+            and a leaky relu activation. In parallel to that, a residual mapping is used, which is followed by average pooling and two-dimensional dropout.
 
         Parameters
         ----------
         input : torch.Tensor
-            Description of parameter `input`.
+            Input tensor.
 
         Returns
         -------
         torch.Tensor
-            Description of returned object.
+            Output tensor.
 
         """
 
@@ -67,7 +68,20 @@ class DiscriminatorBlock(torch.nn.Module):
 class Discriminator(torch.nn.Module):
 
     def __init__(self, input_shape: Tuple[int, int, int] = (3, 256, 256), block_channels: Tuple[Tuple[int, int]] = ((3, 32), (32, 64), (64, 128), (128, 256), (256, 512))) -> None:
+        """ Discriminator: Convolutional discriminator with residual mappings in each block, batch normalization, spectral norm, leaky relu activation, average pooling,
+            and two-dimensional dropout. All DiscriminatorBlocks are followed by a single final fully-connected layer to reduce the features to a single scalar.
+
+        Parameters
+        ----------
+        input_shape : Tuple[int, int, int]
+            Input shape of the discriminator. This Tuple is used to compute the number of in_features for the final Linear layer .
+        block_channels : Tuple[Tuple[int, int]]
+            Tuple with in_channels and out_channels for each of the DiscriminatorBlocks.
+
+        """
         super(Discriminator, self).__init__()
+
+        assert input_shape[0] == block_channels[0][0]
 
         self.blocks = torch.nn.ModuleList()
         for in_channels, out_channels in block_channels:
@@ -77,6 +91,20 @@ class Discriminator(torch.nn.Module):
         self.final_linear = torch.nn.Linear(in_features=last_block_size*last_block_size*block_channels[-1][-1], out_features=1)
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
+        """ Forwards the input tensor through all of the DiscriminatorBlocks and applies the final fully-connected layer to obtain the discriminators decision
+            in form of a single scalar.
+
+        Parameters
+        ----------
+        input : torch.Tensor
+            Description of parameter `input`.
+
+        Returns
+        -------
+        torch.Tensor
+            Description of returned object.
+
+        """
         x = input
         for block in self.blocks:
             x = block(x)

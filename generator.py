@@ -48,7 +48,7 @@ class GeneratorBlock(torch.nn.Module):
         )
 
     def forward(self, input: torch.Tensor, prev: torch.Tensor, vgg_feature: torch.Tensor) -> torch.Tensor:
-        """ Forwards the three input tensors of the GeneratorBlock through it by bilinearly downsampling the main input, bilinearly upsampling the
+        """ Forwards the three input tensors of the GeneratorBlock through this block by bilinearly downsampling the main input, bilinearly upsampling the
             output of the previous GeneratorBlock, concatenation of these with the given vgg feature tensor, and feeding it through two convolutional channels
             each followed by batch normalization and a leaky relu activation.
 
