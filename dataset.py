@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Callable
 
 import torch
 import torchvision
@@ -21,7 +21,7 @@ def save_single_image_lab(save_path, img):
 
 class ImageLABDataset(torch.utils.data.Dataset):
 
-    def __init__(self, data_dir: str, pil_transform = None, pt_transform = None) -> None:
+    def __init__(self, data_dir: str, pil_transform: Callable = None, pt_transform: Callable = None) -> None:
         super(ImageLABDataset, self).__init__()
 
         self.data_dir = data_dir
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     dataset = ImageLABDataset('data/square-custom-unsplash-10K',
                               pil_transform=torchvision.transforms.Compose([
                                 #torchvision.transforms.RandomCrop(384),
-                                torchvision.transforms.Resize(64),
+                                torchvision.transforms.Resize(32),
                               ]),
                               pt_transform=torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)))
 
