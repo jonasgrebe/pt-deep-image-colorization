@@ -1,6 +1,5 @@
 from typing import List, Tuple
 import torch
-from torchsummary import summary
 
 from vgg import VGG19Features
 
@@ -156,12 +155,3 @@ class Generator(torch.nn.Module):
         x = self.final_block(x)
 
         return x
-
-
-if __name__ == '__main__':
-    DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    g = Generator()
-    g.to(DEVICE)
-    print(g)
-    summary(g, (1, 256, 256))
