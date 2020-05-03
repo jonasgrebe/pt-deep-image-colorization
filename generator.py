@@ -1,12 +1,13 @@
 from typing import List, Tuple
 import torch
+from torchsummary import summary
 
 from vgg import VGG19Features
 
 
 class GeneratorBlock(torch.nn.Module):
 
-    def __init__(self, prev_channels: int, vgg_channels: int, out_channels: int, block_size: int, initial: bool = False) -> None:
+    def __init__(self, prev_channels: int, vgg_channels: int, out_channels: int, block_size: int, dropout_rate: float = 0.2, initial: bool = False) -> None:
         """ GeneratorBlock: Single block of cascaded generator. Each of these blocks receives three inputs (previous block output, vgg feature tensor, and downsampled copy of main input)
             and concatenates all of them before two convolutional layers are applied. Therefore the previous block activations are bilinearly resized to the block_size of the current GeneratorBlock.
             The initial GeneratorBlock in the cascade does not receive a previous activation tensor.
@@ -32,18 +33,24 @@ class GeneratorBlock(torch.nn.Module):
         self.initial = initial
 
         # define bilinear resizing
-        self.bilinear_resizer = torch.nn.Upsample(size=block_size, mode='bilinear', align_corners=True)
-        # define batch normalization
-        self.batch_norm = torch.nn.BatchNorm2d(vgg_channels)
+        self.bilinear_resizer = torch.nn.Upsample(size=block_size, mode='bilinear')
+
+        #self.vgg_mapping = torch.nn.Sequential(
+        #    torch.nn.Conv2d(in_channels=vgg_channels, out_channels=vgg_channels, kernel_size=3, padding=1, bias=True),
+        #    torch.nn.LeakyReLU(),
+        #    torch.nn.InstanceNorm2d(num_features=vgg_channels)
+        #)
+
+        self.layer_norm = torch.nn.LayerNorm(normalized_shape=(vgg_channels, block_size, block_size))
 
         # define this blocks processing layers
         self.layers = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=vgg_channels+1+(prev_channels if not initial else 0), out_channels=out_channels, kernel_size=3, padding=1, bias=True),
-            torch.nn.BatchNorm2d(num_features=out_channels),
             torch.nn.LeakyReLU(),
+            torch.nn.LayerNorm(normalized_shape=(out_channels, block_size, block_size)),
             torch.nn.Conv2d(in_channels=out_channels, out_channels=out_channels, kernel_size=3, padding=1, bias=True),
-            torch.nn.BatchNorm2d(num_features=out_channels),
-            torch.nn.LeakyReLU()
+            torch.nn.LeakyReLU(),
+            torch.nn.LayerNorm(normalized_shape=(out_channels, block_size, block_size)),
         )
 
     def forward(self, input: torch.Tensor, prev: torch.Tensor, vgg_feature: torch.Tensor) -> torch.Tensor:
@@ -70,8 +77,9 @@ class GeneratorBlock(torch.nn.Module):
 
         # resize the input to the GeneratorBlock's block_size
         input = self.bilinear_resizer(input)
-        # batch normalize the vgg feature tensor
-        vgg_feature = self.batch_norm(vgg_feature)
+
+        # normalize the vgg feature tensor
+        vgg_feature = self.layer_norm(vgg_feature)
 
         # concatenate all available inputs
         if self.initial:
@@ -89,7 +97,7 @@ class GeneratorBlock(torch.nn.Module):
 class Generator(torch.nn.Module):
 
     def __init__(self, block_sizes: Tuple[int, ...] = (256, 128, 64, 32, 16),
-                       block_out_channels: Tuple[int, ...] = (16, 32, 64, 128, 256),
+                       block_out_channels: Tuple[int, ...] = (32, 64, 128, 256, 512),
                        vgg_layer_idxs: Tuple[int, ...] = (3, 8, 17, 26, 35),
                        vgg_layer_channels: Tuple[int, ...] = (64, 128, 256, 512, 512)) -> None:
         """ Generator: Cascaded generator consisting of a cascade of GeneratorBlocks followed by a final block that reduces the last GeneratorBlock's output to two channels.
@@ -149,6 +157,7 @@ class Generator(torch.nn.Module):
         # feed through the entire cascade of GeneratorBlocks
         x = None
         for b, block in enumerate(self.blocks):
+
             x = block(input, x, vgg_features[-(b+1)])
 
         # feed through the final GeneratorBlock

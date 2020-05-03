@@ -71,25 +71,6 @@ class ImageDatasetLAB(torch.utils.data.Dataset):
         return img
 
 
-def save_single_image_lab(save_path, img):
-    img = img.astype('uint8')
-    img = cv2.cvtColor(img, cv2.COLOR_LAB2BGR)
-    cv2.imwrite(save_path, img)
-
-
-def fill_lab_img(L=None, AB=None):
-    if L is None and AB is None:
-        raise ValueError
-
-    if L is None:
-        return np.concatenate([np.zeros((1,) + AB.shape[1:]), AB], axis=0)
-    else:
-        return np.concatenate([L, np.zeros((2,) + L.shape[1:])], axis=0)
-
-
-
-
-
 if __name__ == '__main__':
 
     dataset = ImageDatasetLAB('data/square-custom-unsplash-10K', )
