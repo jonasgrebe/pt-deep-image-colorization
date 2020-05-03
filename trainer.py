@@ -3,14 +3,12 @@ import torch
 import numpy as np
 import os
 
-import logger
-from logger import DirectoryLogger
-
 import cv2
+import log
 
 class Trainer():
 
-    def __init__(self, logger: logger.Logger,
+    def __init__(self, logger: log.Logger,
                        generator: torch.nn.Module, discriminator: torch.nn.Module,
                        g_optimizer: torch.optim.Optimizer, d_optimizer: torch.optim.Optimizer,
                        pixel_loss: torch.nn.Module, adversarial_loss: torch.nn.Module,
@@ -133,8 +131,7 @@ class Trainer():
         return loss_dict, batches
 
 
-    def forward(self, batch: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, torch.Tensor], List[torch.Tensor]]:
-
+    def forward(self, batch: torch.Tensor) -> List[torch.Tensor]:
         # transform image values to the range (-1, 1)
         img_batch = self.transform_input(batch).to(self.device)
 
@@ -146,36 +143,11 @@ class Trainer():
 
         # ask the discriminator for its opinion
         d_real_batch = self.discriminator(img_batch)
-
-        d_fake_batch_g = self.discriminator(fake_batch) # fake batch with gradient flow through generator
-        d_fake_batch_d = self.discriminator(fake_batch.detach()) # without gradient flow through generator
-
-        # compute the per-pixel loss of the generated colors
-        pxl_loss = self.pxl_loss(AB_batch, g_AB_batch)
-
-        # define target values for adversarial loss computation
-        real_target = torch.ones_like(d_real_batch)
-        fake_target = torch.zeros_like(d_real_batch)
-
-        # compute adversarial losses for generator and discriminator
-        adv_g_loss = self.adv_loss(d_fake_batch_g, real_target)
-        adv_d_loss = 0.5 * (self.adv_loss(d_real_batch, real_target * 0.9) + self.adv_loss(d_fake_batch_d, fake_target))
-
-        # apply loss weights
-        pxl_loss *= self.hypers['pxl_loss_weight']
-        adv_g_loss *= self.hypers['adv_g_loss_weight']
-        adv_d_loss *= self.hypers['adv_d_loss_weight']
-
-        # map losses to the two networks
-        g_loss = pxl_loss + adv_g_loss
-        d_loss = adv_d_loss
-
-        # organize losses and relevant output batches
-        loss_dict = {'pxl_loss': pxl_loss, 'adv_g_loss': adv_g_loss, 'adv_d_loss': adv_d_loss}
+        d_fake_batch_g = self.discriminator(fake_batch)
 
         batches = [img_batch, AB_batch, L_batch, g_AB_batch, fake_batch]
 
-        return g_loss, d_loss, loss_dict, batches
+        return batches
 
 
     def fit(self, train_dataset: torch.utils.data.Dataset,
@@ -217,18 +189,8 @@ class Trainer():
                 self.generator.train()
                 self.discriminator.train()
 
-                #img_batch = self.transform_input(batch).to(self.device)
-                #loss_dict, batches = self.training_step(img_batch)
-
-                g_loss, d_loss, loss_dict, batches = self.forward(batch)
-
-                self.generator.zero_grad()
-                g_loss.backward(retain_graph=True)
-                self.g_optimizer.step()
-
-                self.discriminator.zero_grad()
-                d_loss.backward()
-                self.d_optimizer.step()
+                img_batch = self.transform_input(batch).to(self.device)
+                loss_dict, batches = self.training_step(img_batch)
 
                 # log and print losses
                 self.logger.log_losses(loss_dict)
@@ -264,7 +226,7 @@ class Trainer():
         # for each validation sample:
         for step, batch in enumerate(dataloader):
             # forward input batch through the adversarial network
-            g_loss, d_loss, loss_dict, batches = self.forward(batch)
+            batches = self.forward(batch)
             conc_images = self.visualize_prediction(batches)
 
             self.logger.log_images(np.array(conc_images), step, dataformats='NHWC')
@@ -292,9 +254,26 @@ class Trainer():
             Dataset with testing data.
 
         """
-        # test the trained generator
+        # create dataloader for the testing data
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0)
+
+        # set mode of both networks to evaluation
         self.generator.eval()
         self.discriminator.eval()
+        self.logger.set_mode('testing')
+
+        # for each validation sample:
+        for step, batch in enumerate(dataloader):
+            batches = self.forward(batch)
+            img_batch, AB_batch, L_batch, g_AB_batch, fake_batch = map(lambda x: x.detach(), batches)
+            g_AB_batch = torch.cat([torch.zeros_like(L_batch), g_AB_batch], dim=1)
+            conc_batch = torch.cat([img_batch, g_AB_batch, fake_batch], dim=3)
+
+            conc_batch = conc_batch.cpu().numpy()
+            conc_batch = self.transform_output(conc_batch).astype('uint8')
+            conc_images = [cv2.cvtColor(conc.transpose(1, 2, 0), cv2.COLOR_LAB2BGR) for conc in conc_batch]
+
+            self.logger.log_images(np.array(conc_images), step, dataformats='NHWC')
 
 
     def save_checkpoint(self) -> None:

@@ -7,6 +7,7 @@ parser = argparse.ArgumentParser(description='Train deep image colorization netw
 # add specific arguments for training and testing
 parser.add_argument('--name', type=str, default='exp_layernorm')
 parser.add_argument('--data', type=str, default='data/square-custom-unsplash-10K')
+parser.add_argument('--test_data', type=str, default='data/legacy')
 parser.add_argument('--input_shape', type=Tuple[int, int, int], default=(3, 256, 256))
 parser.add_argument('--g_lr', type=float, default=1e-5)
 parser.add_argument('--d_lr', type=float, default=1e-5)
@@ -27,15 +28,22 @@ from discriminator import Discriminator
 from log import DirectoryLogger, TensorboardLogger, MergedLogger
 
 
-# specify the training and validation data
+# specify the dataset
 dataset = ImageDatasetLAB(args.data, transform=torchvision.transforms.Compose([
     torchvision.transforms.Resize(300),
     torchvision.transforms.RandomCrop(args.input_shape[1:]),
     torchvision.transforms.RandomHorizontalFlip(p=0.5)
 ]))
 
+# divide data randomly into training and validation sets
 train_dataset, val_dataset = torch.utils.data.random_split(dataset, (len(dataset)-args.n_val, args.n_val))
 
+# specify the testing dataset
+test_dataset = ImageDatasetLAB(args.test_data, transform=torchvision.transforms.Compose([
+    torchvision.transforms.Resize(256),
+]))
+
+# define the normalization and denormalization transformations
 transform_input = torchvision.transforms.Lambda(lambda x: (x - 0.5) * 2)
 transform_output = torchvision.transforms.Lambda(lambda x: (x + 1) * 127.5)
 
@@ -82,3 +90,4 @@ trainer = Trainer(logger=logger,
 
 # fit the adversarial network to the data
 trainer.fit(train_dataset=train_dataset, val_dataset=val_dataset, batch_size=args.batch_size, epochs=args.epochs)
+trainer.test(dataset=test_dataset)
