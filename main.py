@@ -5,7 +5,7 @@ from typing import Tuple
 parser = argparse.ArgumentParser(description='Train deep image colorization network')
 
 # add specific arguments for training and testing
-parser.add_argument('--name', type=str, default='exp_layernorm_all_equal')
+parser.add_argument('--name', type=str, default='exp_layernorm')
 parser.add_argument('--data', type=str, default='data/square-custom-unsplash-10K')
 parser.add_argument('--test_data', type=str, default='data/legacy')
 parser.add_argument('--input_shape', type=Tuple[int, int, int], default=(3, 256, 256))
@@ -72,8 +72,8 @@ adv_loss = torch.nn.BCEWithLogitsLoss()
 # specify some fixed hyperparameters
 hypers = {
     'pxl_loss_weight': 1.0,
-    'adv_g_loss_weight': 1.0,
-    'adv_d_loss_weight': 1.0,
+    'adv_g_loss_weight': 0.1,
+    'adv_d_loss_weight': 0.1,
 }
 hypers.update(vars(args))
 
