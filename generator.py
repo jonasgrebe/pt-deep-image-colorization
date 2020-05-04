@@ -1,6 +1,5 @@
 from typing import List, Tuple
 import torch
-from torchsummary import summary
 
 from vgg import VGG19Features
 
@@ -35,12 +34,7 @@ class GeneratorBlock(torch.nn.Module):
         # define bilinear resizing
         self.bilinear_resizer = torch.nn.Upsample(size=block_size, mode='bilinear')
 
-        #self.vgg_mapping = torch.nn.Sequential(
-        #    torch.nn.Conv2d(in_channels=vgg_channels, out_channels=vgg_channels, kernel_size=3, padding=1, bias=True),
-        #    torch.nn.LeakyReLU(),
-        #    torch.nn.InstanceNorm2d(num_features=vgg_channels)
-        #)
-
+        # define normalization for incoming vgg tensor
         self.layer_norm = torch.nn.LayerNorm(normalized_shape=(vgg_channels, block_size, block_size))
 
         # define this blocks processing layers
@@ -56,7 +50,7 @@ class GeneratorBlock(torch.nn.Module):
     def forward(self, input: torch.Tensor, prev: torch.Tensor, vgg_feature: torch.Tensor) -> torch.Tensor:
         """ Forwards the three input tensors of the GeneratorBlock through this block by bilinearly downsampling the main input, bilinearly upsampling the
             output of the previous GeneratorBlock, concatenation of these with the given vgg feature tensor, and feeding it through two convolutional channels
-            each followed by batch normalization and a leaky relu activation.
+            each followed by layer normalization and a leaky relu activation.
 
         Parameters
         ----------
@@ -160,7 +154,7 @@ class Generator(torch.nn.Module):
 
             x = block(input, x, vgg_features[-(b+1)])
 
-        # feed through the final GeneratorBlock
+        # feed through the final block
         x = self.final_block(x)
 
         return x

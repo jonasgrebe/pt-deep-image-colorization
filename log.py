@@ -7,7 +7,15 @@ import cv2
 
 class Logger():
 
-    def __init__(self, run_name) -> None:
+    def __init__(self, run_name: str) -> None:
+        """ Logger: Base class for all training loggers. Such a logger handles all the logging of loss values, images etc.
+
+        Parameters
+        ----------
+        run_name : str
+            Name of the current experiment run.
+
+        """
         self.log_dir = 'logs'
         self.run_name = run_name
         self.mode = 'training'
@@ -16,15 +24,19 @@ class Logger():
         self.global_step = 0
 
 
-    def set_mode(self, mode: str):
+    def set_mode(self, mode: str) -> None:
         self.mode = mode
 
 
-    def new_epoch(self):
+    def set_epoch(self, epoch) -> None:
+        self.epoch = epoch
+
+
+    def new_epoch(self) -> None:
         self.epoch += 1
 
 
-    def new_step(self):
+    def new_step(self) -> None:
         self.global_step += 1
 
 
@@ -98,6 +110,11 @@ class MergedLogger(Logger):
     def set_mode(self, mode: str):
         for logger in self.loggers:
             logger.set_mode(mode)
+
+
+    def set_epoch(self, epoch) -> None:
+        for logger in self.loggers:
+            logger.set_epoch(epoch)
 
 
     def new_epoch(self):

@@ -5,7 +5,6 @@ import torchvision
 
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 
 
@@ -69,44 +68,3 @@ class ImageDatasetLAB(torch.utils.data.Dataset):
         img = torchvision.transforms.functional.to_tensor(img)
 
         return img
-
-
-if __name__ == '__main__':
-
-    dataset = ImageDatasetLAB('data/square-custom-unsplash-10K', )
-
-    n_val = 100
-
-    train_dataset, val_dataset = torch.utils.data.random_split(dataset, (len(dataset)-n_val, n_val))
-
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=8, shuffle=False, num_workers=0)
-
-    for step, sample in enumerate(dataloader):
-
-        # EXAMPLE FOR VALIDATION ROUTINE
-        # get image from batch
-        img_batch = sample['img']
-        file_batch = sample['img_file']
-
-        # transform to (0, 1)
-        img_batch = transform_input(img_batch)
-
-        # extract L and AB channels
-        L_batch, AB_batch = img_batch[:,:1], img_batch[:,1:]
-
-        print(L_batch.size(), AB_batch.size())
-
-        # fill the other one with zeros for each of them
-        L_batch, AB_batch = np.concatenate([L_batch, np.zeros_like(AB_batch)], axis=1), np.concatenate([np.zeros_like(L_batch), AB_batch], axis=1)
-
-        print(L_batch.shape, AB_batch.shape)
-
-        for img, L, AB, file in zip(img_batch, L_batch, AB_batch, file_batch):
-
-            # show all of them together with the image
-            x = np.concatenate([img, L, AB], axis=2).transpose(1, 2, 0)
-            x = transform_output(x)
-
-            x = x.astype('uint8')
-            x = cv2.cvtColor(x, cv2.COLOR_LAB2BGR)
-            cv2.imwrite(save_path, x)

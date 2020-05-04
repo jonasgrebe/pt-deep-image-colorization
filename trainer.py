@@ -73,7 +73,20 @@ class Trainer():
         self.device = device
 
 
-    def training_step(self, img_batch: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], List[torch.Tensor]]:
+    def training_step(self, img_batch: torch.Tensor) -> Dict[str, torch.Tensor]:
+        """ Trains the generator and the discriminator on the given image batch.
+
+        Parameters
+        ----------
+        img_batch : torch.Tensor
+            Input image tensor.
+
+        Returns
+        -------
+        Dict[str, torch.Tensor]
+            .Tuple with a dictionary that holds all the loss_name's together with their losss values
+
+        """
         # reset the gradients of the discriminator
         self.discriminator.zero_grad()
 
@@ -125,26 +138,38 @@ class Trainer():
         # optimize the generator's parameters based on the computed gradients
         self.g_optimizer.step()
 
+        # put all of the losses in a dictionary
         loss_dict = {'pxl_loss': pxl_loss, 'adv_g_loss': adv_g_loss, 'adv_d_loss': adv_d_loss}
-        batches = [img_batch, AB_batch, L_batch, g_AB_batch, fake_batch]
 
-        return loss_dict, batches
+        return loss_dict
 
 
-    def forward(self, batch: torch.Tensor) -> List[torch.Tensor]:
-        # transform image values to the range (-1, 1)
-        img_batch = self.transform_input(batch).to(self.device)
+    def forward(self, img_batch: torch.Tensor) -> List[torch.Tensor]:
+        """ Forwards a given batch of images through the network and returns a list of relevant output batches for visualization .
+
+        Parameters
+        ----------
+        img_batch : torch.Tensor
+
+        Returns
+        -------
+        List[torch.Tensor]
+            List of relevant output batches for visualization
+
+        """
 
         # feed L channel through the generator and create the fake images afterwards
         L_batch, AB_batch = img_batch[:,:1], img_batch[:,1:]
         g_AB_batch = self.generator(L_batch)
 
+        # build the fake images
         fake_batch = torch.cat([L_batch, g_AB_batch], dim=1)
 
         # ask the discriminator for its opinion
         d_real_batch = self.discriminator(img_batch)
         d_fake_batch_g = self.discriminator(fake_batch)
 
+        # put all of the relevant batches in a list and return it
         batches = [img_batch, AB_batch, L_batch, g_AB_batch, fake_batch]
 
         return batches
@@ -190,7 +215,7 @@ class Trainer():
                 self.discriminator.train()
 
                 img_batch = self.transform_input(batch).to(self.device)
-                loss_dict, batches = self.training_step(img_batch)
+                loss_dict = self.training_step(img_batch)
 
                 # log and print losses
                 self.logger.log_losses(loss_dict)
@@ -225,24 +250,33 @@ class Trainer():
 
         # for each validation sample:
         for step, batch in enumerate(dataloader):
+            # transform image values to the range (-1, 1)
+            img_batch = self.transform_input(batch).to(self.device)
+
             # forward input batch through the adversarial network
-            batches = self.forward(batch)
+            batches = self.forward(img_batch)
             conc_images = self.visualize_prediction(batches)
 
             self.logger.log_images(np.array(conc_images), step, dataformats='NHWC')
 
 
     def visualize_prediction(self, batches):
+
+        # detach all batches
         img_batch, AB_batch, L_batch, g_AB_batch, fake_batch = map(lambda x: x.detach(), batches)
+
+        # fill missing channels
         L_batch, AB_batch, g_AB_batch = torch.cat([L_batch, torch.zeros_like(AB_batch)], dim=1), torch.cat([torch.zeros_like(L_batch), AB_batch], dim=1), torch.cat([torch.zeros_like(L_batch), g_AB_batch], dim=1)
 
+        # concatenate all batches, move the result to the cpu and transform it to numpy
         conc_batch = torch.cat([img_batch, AB_batch, L_batch, g_AB_batch, fake_batch], dim=3)
         conc_batch = conc_batch.cpu().numpy()
+
+        # convert all images to RGB
         conc_batch = self.transform_output(conc_batch).astype('uint8')
-
         conc_images = [cv2.cvtColor(conc.transpose(1, 2, 0), cv2.COLOR_LAB2RGB) for conc in conc_batch]
-        return conc_images
 
+        return conc_images
 
 
     def test(self, dataset: torch.utils.data.Dataset) -> None:
@@ -271,7 +305,7 @@ class Trainer():
 
             conc_batch = conc_batch.cpu().numpy()
             conc_batch = self.transform_output(conc_batch).astype('uint8')
-            conc_images = [cv2.cvtColor(conc.transpose(1, 2, 0), cv2.COLOR_LAB2BGR) for conc in conc_batch]
+            conc_images = [cv2.cvtColor(conc.transpose(1, 2, 0), cv2.COLOR_LAB2RGB) for conc in conc_batch]
 
             self.logger.log_images(np.array(conc_images), step, dataformats='NHWC')
 
@@ -298,8 +332,7 @@ class Trainer():
 
 
     def load_checkpoint(self, epoch: int) -> None:
-        """ Loads the checkpoint of a given epoch and restores t
-        he parameters and states
+        """ Loads the checkpoint of a given epoch and restores the parameters and states
             of all models and optimizers.
 
         Parameters

@@ -27,7 +27,7 @@ class VGG19PerceptualLoss(torch.nn.Module):
 
 
 class VGG19Features(torch.nn.Module):
-# highly inspired by https://github.com/ChristophReich1996/Deep_Fovea_Architecture_for_Video_Super_Resolution/blob/master/vgg_19.py
+    # highly inspired by https://github.com/ChristophReich1996/Deep_Fovea_Architecture_for_Video_Super_Resolution/blob/master/vgg_19.py
 
     def __init__(self, vgg_layer_idxs: Tuple[int] = (3, 8, 17, 26, 35), frozen: bool = True) -> None:
         """ VGG19Features module: This module enables the utilization of (pretrained) VGG19 vgg_features.

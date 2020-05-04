@@ -1,9 +1,6 @@
 from typing import Tuple
 import torch
 
-from torchsummary import summary
-
-
 class DiscriminatorBlock(torch.nn.Module):
 
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int, dropout_rate: float = 0.2) -> None:
@@ -36,8 +33,7 @@ class DiscriminatorBlock(torch.nn.Module):
 
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
-        """ Forwards a given input tensor through this block by feeding it through the convolutional layers including batch normalization, spectral norm,
-            and a leaky relu activation. In parallel to that, a residual mapping is used, which is followed by average pooling and two-dimensional dropout.
+        """ Forwards a given input tensor through this block by feeding it through the convolutional layers spectral norm and a leaky relu activation.
 
         Parameters
         ----------
@@ -76,10 +72,12 @@ class Discriminator(torch.nn.Module):
 
         assert input_shape[0] == block_channels[0][0]
 
+        # create all the DiscriminatorBlocks and store them in a ModuleList
         self.blocks = torch.nn.ModuleList()
         for (in_channels, out_channels), kernel_size in zip(block_channels, block_kernel_sizes):
             self.blocks.append(DiscriminatorBlock(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size))
 
+        # compute the size of the last block and add a final fully-connected layer
         last_block_size = input_shape[-1] // 2 ** len(block_channels)
         self.final_linear = torch.nn.utils.spectral_norm(
             torch.nn.Linear(in_features=last_block_size*last_block_size*block_channels[-1][-1], out_features=1)
@@ -107,10 +105,3 @@ class Discriminator(torch.nn.Module):
         x = self.final_linear(x.flatten(1))
 
         return x
-
-if __name__ == '__main__':
-    d = Discriminator()
-
-    from torchsummary import summary
-
-    summary(d.cuda(), (3, 256, 256))
