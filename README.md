@@ -5,7 +5,7 @@ PyTorch implementation of a deep neural network that utilizes a pre-trained VGG1
  ![custom_datatset](unsplash-custom-dataset-10K.png)
  
  ### Setup
- In order to install all dependencies, you can simply create a new virtual environment with anaconda by using `conda env create -f deep-image-colorization.yml`. Afterwards, you can execute the main script and specify your own data paths or hyperparameters using `python main.py --data <path> --test_data <path> --batch_size 1 --epochs <N>.`
+ In order to install all dependencies, you can simply create a new virtual environment with anaconda by using `conda env create -f deep-image-colorization.yml`. Afterwards, you can execute the main script and specify your own data paths or hyperparameters using `python main.py --data <PATh> --test_data <PATH> --g_lr <G_LR> --d_lr >D_LR> --batch_size 1 --epochs <N>.
  
  ### Results
  Below you can find some example results from the validation (L+AB, AB, L, AB_fake, L+AB_fake) and the testing sets (L, AB_fake, L+AB_fake).
