@@ -2,4 +2,4 @@
 data/*
 *.ckpt
 *.DESKTOP-L233INL.*
-*.png
+logs/exp_layernorm/testing/*
