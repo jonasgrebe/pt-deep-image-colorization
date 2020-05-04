@@ -7,3 +7,10 @@ PyTorch implementation of a deep neural network that utilizes a pre-trained VGG1
 ![example_2](logs/exp_layernorm/validation/images/25/21.png)
 ![example_3](logs/exp_layernorm/validation/images/25/25.png)
 ![example_4](logs/exp_layernorm/validation/images/25/10.png)
+
+![example_5](examples/1.png)
+![example_6](examples/18.png)
+![example_7](examples/73.png)
+![example_8](examples/23.png)
+
+
