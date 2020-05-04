@@ -28,7 +28,7 @@ class Logger():
         self.mode = mode
 
 
-    def set_epoch(self, epoch) -> None:
+    def set_epoch(self, epoch: int) -> None:
         self.epoch = epoch
 
 
@@ -40,11 +40,11 @@ class Logger():
         self.global_step += 1
 
 
-    def log_losses(self, loss_dict) -> None:
+    def log_losses(self, loss_dict: Dict[torch.Tensor]) -> None:
         raise NotImplementedError
 
 
-    def log_images(self, img_batch, name, dataformats='NCHW') -> None:
+    def log_images(self, img_batch: torch.Tensor, name: str, dataformats: str = 'NCHW') -> None:
         raise NotImplementedError
 
 
@@ -54,11 +54,11 @@ class DirectoryLogger(Logger):
         super(DirectoryLogger, self).__init__(run_name)
 
 
-    def log_losses(self, loss_dict) -> None:
+    def log_losses(self, loss_dict: Dict[torch.Tensor]) -> None:
         pass
 
 
-    def log_images(self, img_batch, name, dataformats='NCHW') -> None:
+    def log_images(self, img_batch: torch.Tensor, name: str, dataformats: str = 'NCHW') -> None:
         if torch.is_tensor(img_batch):
             img_batch = img_batch.detach().cpu().numpy()
 
@@ -84,7 +84,7 @@ class TensorboardLogger(Logger):
         self.writer = SummaryWriter(log_dir=os.path.join(self.log_dir, self.run_name))
 
 
-    def log_losses(self, loss_dict) -> None:
+    def log_losses(self, loss_dict: Dict[torch.Tensor]) -> None:
         for loss_name in loss_dict:
             if torch.is_tensor(loss_dict[loss_name]):
                 loss_dict[loss_name] = loss_dict[loss_name].detach().cpu().numpy()
@@ -92,7 +92,7 @@ class TensorboardLogger(Logger):
         self.writer.add_scalars(self.mode, loss_dict, self.global_step)
 
 
-    def log_images(self, img_batch, name, dataformats='NCHW') -> None:
+    def log_images(self, img_batch: torch.Tensor, name: str, dataformats: str = 'NCHW') -> None:
 
         if torch.is_tensor(img_batch):
             img_batch = img_batch.detach().cpu().numpy()
@@ -112,7 +112,7 @@ class MergedLogger(Logger):
             logger.set_mode(mode)
 
 
-    def set_epoch(self, epoch) -> None:
+    def set_epoch(self, epoch: int) -> None:
         for logger in self.loggers:
             logger.set_epoch(epoch)
 
@@ -127,11 +127,11 @@ class MergedLogger(Logger):
             logger.new_step()
 
 
-    def log_losses(self, loss_dict) -> None:
+    def log_losses(self, loss_dict: Dict[torch.Tensor]) -> None:
         for logger in self.loggers:
             logger.log_losses(loss_dict)
 
 
-    def log_images(self, img_batch, name, dataformats='NCHW') -> None:
+    def log_images(self, img_batch: torch.Tensor, name: str, dataformats: str = 'NCHW') -> None:
         for logger in self.loggers:
             logger.log_images(img_batch, name, dataformats)
