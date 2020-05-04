@@ -60,16 +60,15 @@ class Trainer():
         self.pxl_loss = pixel_loss
         self.adv_loss = adversarial_loss
 
-        # if not logger is specified, use a basic logger
+        # set logger
         self.logger = logger
 
         # set input and output transformations
         self.transform_input = transform_input
         self.transform_output = transform_output
 
-        # set hyperparameter dictionary and torch.device
+        # set hyperparameter dictionary and device
         self.hypers = hypers
-
         self.device = device
 
 
@@ -260,8 +259,7 @@ class Trainer():
             self.logger.log_images(np.array(conc_images), step, dataformats='NHWC')
 
 
-    def visualize_prediction(self, batches):
-
+    def visualize_prediction(self, batches) -> List[np.ndarray]:
         # detach all batches
         img_batch, AB_batch, L_batch, g_AB_batch, fake_batch = map(lambda x: x.detach(), batches)
 
@@ -353,4 +351,4 @@ class Trainer():
         self.d_optimizer = checkpoint['d_optimizer']
 
         # inform the logger about the restored epoch
-        self.logger.epoch = checkpoint['epoch']
+        self.logger.set_epoch(checkpoint['epoch'])
