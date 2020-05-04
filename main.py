@@ -5,15 +5,15 @@ from typing import Tuple
 parser = argparse.ArgumentParser(description='Train deep image colorization network')
 
 # add specific arguments for training and testing
-parser.add_argument('--name', type=str, default='exp_layernorm')
-parser.add_argument('--data', type=str, default='data/square-custom-unsplash-10K')
-parser.add_argument('--test_data', type=str, default='data/legacy')
-parser.add_argument('--input_shape', type=Tuple[int, int, int], default=(3, 256, 256))
-parser.add_argument('--g_lr', type=float, default=1e-5)
-parser.add_argument('--d_lr', type=float, default=1e-5)
-parser.add_argument('--batch_size', type=int, default=1)
-parser.add_argument('--epochs', type=int, default=25)
-parser.add_argument('--n_val', type=int, default=32)
+parser.add_argument('--name', type=str, default='exp_layernorm', help='name of the run')
+parser.add_argument('--data', type=str, default='data/square-custom-unsplash-10K', help='path to the training data')
+parser.add_argument('--test_data', type=str, default='data/legacy', help='path to the testing data')
+parser.add_argument('--input_shape', type=Tuple[int, int, int], default=(3, 256, 256), help='input shape in format (C, H, W)')
+parser.add_argument('--g_lr', type=float, default=1e-5, help='learning rate of generator')
+parser.add_argument('--d_lr', type=float, default=1e-5, help='learning rate of discriminator')
+parser.add_argument('--batch_size', type=int, default=1, help='number of samples per batch')
+parser.add_argument('--epochs', type=int, default=25, help='number of iterations over the training data')
+parser.add_argument('--n_val', type=int, default=32, help='number of validation samples taken from the training data')
 
 # parse arguments
 args = parser.parse_args()

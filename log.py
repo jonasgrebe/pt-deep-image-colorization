@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 import torch
 import numpy as np
@@ -40,7 +40,7 @@ class Logger():
         self.global_step += 1
 
 
-    def log_losses(self, loss_dict: Dict[torch.Tensor]) -> None:
+    def log_losses(self, loss_dict: Dict[str, torch.Tensor]) -> None:
         raise NotImplementedError
 
 
@@ -54,7 +54,7 @@ class DirectoryLogger(Logger):
         super(DirectoryLogger, self).__init__(run_name)
 
 
-    def log_losses(self, loss_dict: Dict[torch.Tensor]) -> None:
+    def log_losses(self, loss_dict: Dict[str, torch.Tensor]) -> None:
         pass
 
 
@@ -84,7 +84,7 @@ class TensorboardLogger(Logger):
         self.writer = SummaryWriter(log_dir=os.path.join(self.log_dir, self.run_name))
 
 
-    def log_losses(self, loss_dict: Dict[torch.Tensor]) -> None:
+    def log_losses(self, loss_dict: Dict[str, torch.Tensor]) -> None:
         for loss_name in loss_dict:
             if torch.is_tensor(loss_dict[loss_name]):
                 loss_dict[loss_name] = loss_dict[loss_name].detach().cpu().numpy()
@@ -127,7 +127,7 @@ class MergedLogger(Logger):
             logger.new_step()
 
 
-    def log_losses(self, loss_dict: Dict[torch.Tensor]) -> None:
+    def log_losses(self, loss_dict: Dict[str, torch.Tensor]) -> None:
         for logger in self.loggers:
             logger.log_losses(loss_dict)
 
