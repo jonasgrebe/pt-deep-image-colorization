@@ -4,7 +4,7 @@ PyTorch implementation of a deep neural network that utilizes a pre-trained VGG1
  
  ![custom_datatset](unsplash-custom-dataset-10K.png)
  
- Below you can find some examples from the validation (L+AB, AB, L, AB_fake, L+AB_fake) and the testing sets (L, AB_fake, L+AB_fake).
+ Below you can find some example results from the validation (L+AB, AB, L, AB_fake, L+AB_fake) and the testing sets (L, AB_fake, L+AB_fake).
  
 ![example_0](logs/exp_layernorm/validation/images/25/3.png)
 ![example_1](logs/exp_layernorm/validation/images/25/20.png)
